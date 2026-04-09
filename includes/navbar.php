@@ -8,7 +8,7 @@ if (isset($_GET['logout'])) {
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="<?= BASE_URL ?>/dashboard.php">
-            <i class="bi bi-envelope-paper"></i> Sistema de Mailing - PICFOTO
+            <img src="<?= BASE_URL ?>/images/Logo-Pic-foto-_Final.png" alt="Logo" style="height: 35px;">
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>

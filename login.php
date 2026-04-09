@@ -16,7 +16,8 @@ require_once 'includes/functions.php';
         <div class="row justify-content-center mt-5">
             <div class="col-md-5">
                 <div class="card shadow">
-                    <div class="card-body">
+                    <div class="card-body text-center">
+                        <img src="images/Logo-Pic-foto-_Final.png" alt="Logo" style="max-height: 80px; margin-bottom: 15px;">
                         <h3 class="text-center mb-4">Sistema de Mailing</h3>
                         
                         <?php if ($flash = getFlash()): ?>
