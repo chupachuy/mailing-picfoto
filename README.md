@@ -26,8 +26,8 @@ php setup.php
 
 ### 2. Credenciales Iniciales
 
-- **Usuario:** admin
-- **Contraseña:** admin123
+Después de ejecutar `php setup.php`, se creará un usuario admin.
+Las credenciales se mostrarán en la terminal después del setup.
 
 ### 3. Configurar SMTP
 
