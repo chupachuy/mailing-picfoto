@@ -84,6 +84,11 @@ $campaigns = $stmt->fetchAll();
                                         </td>
                                         <td><?= formatDate($c['created_at']) ?></td>
                                         <td>
+                                            <?php if ($c['status'] === 'draft'): ?>
+                                                <a href="edit.php?id=<?= $c['id'] ?>" class="btn btn-sm btn-outline-secondary">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            <?php endif; ?>
                                             <a href="view.php?id=<?= $c['id'] ?>" class="btn btn-sm btn-outline-primary">
                                                 <i class="bi bi-eye"></i>
                                             </a>

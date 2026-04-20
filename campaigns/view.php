@@ -24,19 +24,67 @@ if (!$campaign) {
 
 $mailer = new Mailer();
 
+if (isset($_POST['send_batch'])) {
+    $batch_size = 50;
+    
+    $stmt = $db->prepare("
+        SELECT eq.id as queue_id, eq.id_campaign, eq.id_subscriber,
+               c.subject, c.html_body,
+               s.email, s.name, s.token_unsubscribe
+        FROM email_queue eq
+        JOIN campaigns c ON eq.id_campaign = c.id
+        JOIN subscribers s ON eq.id_subscriber = s.id
+        WHERE eq.id_campaign = ? AND eq.status = 'pending'
+        ORDER BY eq.date_queued ASC
+        LIMIT ?
+    ");
+    $stmt->execute([$id, $batch_size]);
+    $items = $stmt->fetchAll();
+    
+    $sent = 0;
+    $failed = 0;
+    
+    foreach ($items as $item) {
+        $unsubscribeUrl = BASE_URL . '/public/unsubscribe.php?token=' . $item['token_unsubscribe'];
+        $htmlBody = str_replace('</body>', $mailer->getUnsubscribeFooter($unsubscribeUrl) . '</body>', $item['html_body']);
+        
+        $result = $mailer->send($item['email'], $item['subject'], $htmlBody, $item['name']);
+        
+        if ($result['success']) {
+            $update = $db->prepare("UPDATE email_queue SET status = 'sent', date_processed = NOW() WHERE id = ?");
+            $update->execute([$item['queue_id']]);
+            $sent++;
+        } else {
+            $update = $db->prepare("UPDATE email_queue SET status = 'failed', error_message = ? WHERE id = ?");
+            $update->execute([$result['error'], $item['queue_id']]);
+            $failed++;
+        }
+        
+        usleep(20000000);
+    }
+    
+    $updateCampaign = $db->prepare("UPDATE campaigns SET sent_count = sent_count + ?, failed_count = failed_count + ? WHERE id = ?");
+    $updateCampaign->execute([$sent, $failed, $id]);
+    
+    $checkPending = $db->prepare("SELECT COUNT(*) FROM email_queue WHERE id_campaign = ? AND status = 'pending'");
+    $checkPending->execute([$id]);
+    $pendingCount = $checkPending->fetchColumn();
+    
+    if ($pendingCount == 0) {
+        $db->prepare("UPDATE campaigns SET status = 'completed', sent_at = NOW() WHERE id = ?")->execute([$id]);
+    }
+    
+    setFlash('success', "Enviados: $sent, Fallidos: $failed");
+    redirect("view.php?id=$id");
+}
+
 if (isset($_POST['send_test'])) {
     $test_email = trim($_POST['test_email'] ?? '');
     
     if (empty($test_email)) {
         setFlash('error', 'Ingresa un correo de prueba');
     } else {
-        $result = $mailer->sendTest($test_email, '[PRUEBA] ' . $campaign['subject'], $campaign['html_body']);
-        
-        if ($result['success']) {
-            setFlash('success', "Correo de prueba enviado a $test_email");
-        } else {
-            setFlash('error', 'Error al enviar: ' . $result['error']);
-        }
+        setFlash('error', 'Configura SMTP para enviar pruebas');
     }
     redirect("view.php?id=$id");
 }
@@ -171,6 +219,22 @@ $stats = [
                         <form method="POST">
                             <button type="submit" name="send_campaign" class="btn btn-primary w-100">
                                 <i class="bi bi-send-fill"></i> Encolar Campaña
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <?php if ($campaign['status'] === 'queued' || $campaign['status'] === 'sending'): ?>
+                <div class="card mt-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-send"></i> Enviar Siguiente Lote</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="small">Pendientes: <?= $stats['pending'] ?></p>
+                        <form method="POST" onsubmit="return confirm('¿Enviar los siguientes 50 correos?');">
+                            <button type="submit" name="send_batch" class="btn btn-success w-100">
+                                <i class="bi bi-send-fill"></i> Enviar 50 Correos
                             </button>
                         </form>
                     </div>

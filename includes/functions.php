@@ -88,6 +88,7 @@ function generateEmailTemplate($data) {
             body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }
             .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
             .header { background: #007bff; color: white; padding: 20px; text-align: center; }
+            .header img { max-width: 200px; height: auto; display: block; margin: 0 auto 15px; }
             .header h1 { margin: 0; font-size: 24px; }
             .content { padding: 30px 20px; }
             .banner { width: 100%; height: auto; }
@@ -99,6 +100,7 @@ function generateEmailTemplate($data) {
     <body>
         <div class="container">
             <div class="header">
+                <img src="https://picfoto.mx/wp-content/uploads/2023/11/Logo-Pic-foto-_Final.png" alt="Logo">
                 <h1>' . ($data['title'] ?? 'Título') . '</h1>
             </div>
             <div class="content">

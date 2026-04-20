@@ -19,7 +19,7 @@ define('DB_CHARSET', 'utf8mb4');
 
 // Configuración de Envíos
 define('BATCH_SIZE', 50);
-define('BATCH_DELAY', 5);
+define('BATCH_DELAY', 20);
 
 // Zona Horaria
 date_default_timezone_set('America/Mexico_City');
