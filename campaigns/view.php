@@ -83,8 +83,27 @@ if (isset($_POST['send_test'])) {
     
     if (empty($test_email)) {
         setFlash('error', 'Ingresa un correo de prueba');
-    } else {
-        setFlash('error', 'Configura SMTP para enviar pruebas');
+        redirect("view.php?id=$id");
+    }
+    
+    error_log("=== INICIO ENVIO CORREO PRUEBA ===");
+    error_log("Destinatario: $test_email");
+    error_log("Campaña ID: $id");
+    
+    try {
+        $mailer = new Mailer();
+        error_log("Mailer creado, enviando...");
+        $result = $mailer->send($test_email, '[PRUEBA] ' . $campaign['subject'], $campaign['html_body'], 'Test');
+        error_log("Resultado: " . json_encode($result));
+        
+        if ($result['success']) {
+            setFlash('success', "Correo de prueba enviado a $test_email");
+        } else {
+            setFlash('error', 'Error al enviar: ' . $result['error']);
+        }
+    } catch (Exception $e) {
+        error_log("Excepción: " . $e->getMessage());
+        setFlash('error', 'Error: ' . $e->getMessage());
     }
     redirect("view.php?id=$id");
 }
