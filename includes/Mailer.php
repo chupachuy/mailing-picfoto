@@ -42,20 +42,21 @@ class Mailer {
         $this->mail->Host = $this->config['smtp_host'];
         $this->mail->SMTPAuth = true;
         $this->mail->Username = $this->config['smtp_username'];
-        $this->mail->Password = $this->config['smtp_password'];
+        $this->mail->Password = decryptSmtpPassword($this->config['smtp_password']);
         $this->mail->SMTPSecure = $this->config['smtp_encryption'] === 'ssl' ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
         $this->mail->Port = (int)$this->config['smtp_port'];
         $this->mail->CharSet = 'UTF-8';
         $this->mail->setFrom($this->config['from_email'], $this->config['from_name']);
         
-        // Evitar el error de certificado SSL/TLS (común en Hostgator/cPanel)
-        $this->mail->SMTPOptions = array(
-            'ssl' => array(
-                'verify_peer' => false,
-                'verify_peer_name' => false,
-                'allow_self_signed' => true
-            )
-        );
+        if (!SMTP_SSL_VERIFY) {
+            $this->mail->SMTPOptions = array(
+                'ssl' => array(
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true
+                )
+            );
+        }
         
         $this->mail->Timeout = 15;
         $this->mail->SMTPKeepAlive = false;
@@ -106,7 +107,7 @@ class Mailer {
 
     public function getUnsubscribeFooter($url) {
         return '<div style="background:#f8f9fa;padding:20px;text-align:center;font-size:12px;color:#666;border-top:1px solid #ddd;margin-top:30px;">
-            <p style="margin:0 0 10px;">Si no deseas recibir más correos, <a href="' . $url . '" style="color:#007bff;">haz clic aquí para darte de baja</a>.</p>
+            <p style="margin:0 0 10px;">Si no deseas recibir mas correos, <a href="' . $url . '" style="color:#007bff;">haz clic aqui para darte de baja</a>.</p>
         </div>';
     }
 

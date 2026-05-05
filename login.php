@@ -10,6 +10,7 @@ require_once 'includes/functions.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión - Sistema de Mailing</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body class="bg-light">
     <div class="container">
@@ -28,6 +29,7 @@ require_once 'includes/functions.php';
                         <?php endif; ?>
 
                         <form action="auth.php" method="POST">
+                            <?= csrfField() ?>
                             <div class="mb-3">
                                 <label class="form-label">Usuario</label>
                                 <input type="text" name="username" class="form-control" required autofocus>
@@ -38,6 +40,7 @@ require_once 'includes/functions.php';
                             </div>
                             <button type="submit" class="btn btn-primary w-100">Ingresar</button>
                         </form>
+                        <?= socialFooterWeb() ?>
                     </div>
                 </div>
             </div>

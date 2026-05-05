@@ -25,6 +25,8 @@ if (!$campaign) {
 $mailer = new Mailer();
 
 if (isset($_POST['send_batch'])) {
+    if (!verifyCsrf()) { redirect('index.php'); }
+
     $batch_size = 50;
     
     $stmt = $db->prepare("
@@ -60,7 +62,7 @@ if (isset($_POST['send_batch'])) {
             $failed++;
         }
         
-        usleep(20000000);
+        sleep(3);
     }
     
     $updateCampaign = $db->prepare("UPDATE campaigns SET sent_count = sent_count + ?, failed_count = failed_count + ? WHERE id = ?");
@@ -79,6 +81,8 @@ if (isset($_POST['send_batch'])) {
 }
 
 if (isset($_POST['send_test'])) {
+    if (!verifyCsrf()) { redirect('index.php'); }
+
     $test_email = trim($_POST['test_email'] ?? '');
     
     if (empty($test_email)) {
@@ -109,8 +113,20 @@ if (isset($_POST['send_test'])) {
 }
 
 if (isset($_POST['send_campaign'])) {
-    $stmt = $db->prepare("SELECT * FROM subscribers WHERE status = 'active'");
-    $stmt->execute();
+    if (!verifyCsrf()) { redirect('index.php'); }
+
+    $targetGroups = !empty($campaign['target_groups']) ? json_decode($campaign['target_groups'], true) : [];
+    if (!is_array($targetGroups)) $targetGroups = [];
+    
+    if (empty($targetGroups)) {
+        $stmt = $db->prepare("SELECT * FROM subscribers WHERE status = 'active'");
+        $stmt->execute();
+    } else {
+        $placeholders = implode(',', array_fill(0, count($targetGroups), '?'));
+        $params = $targetGroups;
+        $stmt = $db->prepare("SELECT * FROM subscribers WHERE status = 'active' AND group_id IN ($placeholders)");
+        $stmt->execute($params);
+    }
     $subscribers = $stmt->fetchAll();
     
     if (empty($subscribers)) {
@@ -192,6 +208,13 @@ $stats = [
                     </div>
                     <div class="card-body">
                         <p><strong>Asunto:</strong> <?= htmlspecialchars($campaign['subject']) ?></p>
+                        <?php if (!empty($campaign['subtitle'])): ?>
+                        <p><strong>Subtitulo:</strong> <?= htmlspecialchars($campaign['subtitle']) ?></p>
+                        <?php endif; ?>
+                        <p><strong>Tema:</strong> 
+                            <span style="display:inline-block;width:16px;height:16px;border-radius:4px;background:<?= htmlspecialchars($campaign['accent_color'] ?? '#007bff') ?>;vertical-align:middle;margin-right:4px;"></span>
+                            <?= htmlspecialchars($campaign['accent_color'] ?? '#007bff') ?>
+                        </p>
                         <p><strong>Estado:</strong> 
                             <?php
                             $statusMap = [
@@ -209,6 +232,24 @@ $stats = [
                         <p><strong>Enviados:</strong> <?= $stats['sent'] ?></p>
                         <p><strong>Fallidos:</strong> <?= $stats['failed'] ?></p>
                         <p><strong>Fecha:</strong> <?= formatDate($campaign['created_at']) ?></p>
+                        <?php
+                        $targetGroups = !empty($campaign['target_groups']) ? json_decode($campaign['target_groups'], true) : [];
+                        if (!is_array($targetGroups)) $targetGroups = [];
+                        if (!empty($targetGroups)):
+                            $gPlaceholders = implode(',', array_fill(0, count($targetGroups), '?'));
+                            $gStmt = $db->prepare("SELECT id, name, color FROM subscriber_groups WHERE id IN ($gPlaceholders)");
+                            $gStmt->execute($targetGroups);
+                            $campaignGroups = $gStmt->fetchAll();
+                            if (!empty($campaignGroups)):
+                        ?>
+                        <p><strong><i class="bi bi-people-fill"></i> Grupos destino:</strong><br>
+                            <?php foreach ($campaignGroups as $cg): ?>
+                                <span class="badge" style="background:<?= htmlspecialchars($cg['color']) ?>; margin: 1px;"><?= htmlspecialchars($cg['name']) ?></span>
+                            <?php endforeach; ?>
+                        </p>
+                        <?php endif; else: ?>
+                        <p><strong><i class="bi bi-people-fill"></i> Grupos destino:</strong> Todos los suscriptores activos</p>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -219,6 +260,7 @@ $stats = [
                     </div>
                     <div class="card-body">
                         <form method="POST">
+                            <?= csrfField() ?>
                             <div class="input-group">
                                 <input type="email" name="test_email" class="form-control" placeholder="correo@ejemplo.com" required>
                                 <button type="submit" name="send_test" class="btn btn-outline-primary">
@@ -236,6 +278,7 @@ $stats = [
                     <div class="card-body">
                         <p class="text-muted small">La campaña se encolará y se enviará automáticamente mediante el cron job.</p>
                         <form method="POST">
+                            <?= csrfField() ?>
                             <button type="submit" name="send_campaign" class="btn btn-primary w-100">
                                 <i class="bi bi-send-fill"></i> Encolar Campaña
                             </button>
@@ -252,6 +295,7 @@ $stats = [
                     <div class="card-body">
                         <p class="small">Pendientes: <?= $stats['pending'] ?></p>
                         <form method="POST" onsubmit="return confirm('¿Enviar los siguientes 50 correos?');">
+                            <?= csrfField() ?>
                             <button type="submit" name="send_batch" class="btn btn-success w-100">
                                 <i class="bi bi-send-fill"></i> Enviar 50 Correos
                             </button>

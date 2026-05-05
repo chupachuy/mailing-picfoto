@@ -8,6 +8,8 @@ requireRole(['admin']);
 $db = getDB();
 
 if (isset($_POST['add_user'])) {
+    if (!verifyCsrf()) { redirect('users.php'); }
+
     $username = trim($_POST['username'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -30,6 +32,8 @@ if (isset($_POST['add_user'])) {
 }
 
 if (isset($_POST['update_user'])) {
+    if (!verifyCsrf()) { redirect('users.php'); }
+
     $id = $_POST['id'];
     $role = $_POST['role'];
     $password = $_POST['password'] ?? '';
@@ -47,8 +51,10 @@ if (isset($_POST['update_user'])) {
     redirect('users.php');
 }
 
-if (isset($_GET['delete'])) {
-    $id = $_GET['delete'];
+if (isset($_POST['delete_user'])) {
+    if (!verifyCsrf()) { redirect('users.php'); }
+
+    $id = $_POST['delete_user'];
     if ($id != $_SESSION['user_id']) {
         $stmt = $db->prepare("DELETE FROM users WHERE id = ?");
         $stmt->execute([$id]);
@@ -91,6 +97,7 @@ $users = $stmt->fetchAll();
                     </div>
                     <div class="card-body">
                         <form method="POST">
+                            <?= csrfField() ?>
                             <div class="mb-3">
                                 <label class="form-label">Usuario</label>
                                 <input type="text" name="username" class="form-control" required>
@@ -148,9 +155,13 @@ $users = $stmt->fetchAll();
                                                     <i class="bi bi-pencil"></i>
                                                 </button>
                                                 <?php if ($u['id'] != $_SESSION['user_id']): ?>
-                                                    <a href="?delete=<?= $u['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar?')">
-                                                        <i class="bi bi-trash"></i>
-                                                    </a>
+                                                    <form method="POST" style="display:inline" onsubmit="return confirm('¿Eliminar?')">
+                                                        <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
+                                                        <input type="hidden" name="delete_user" value="<?= $u['id'] ?>">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
                                                 <?php endif; ?>
                                             </td>
                                         </tr>
@@ -169,6 +180,7 @@ $users = $stmt->fetchAll();
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
                                 <form method="POST">
+                                    <?= csrfField() ?>
                                     <div class="modal-body">
                                         <input type="hidden" name="id" value="<?= $u['id'] ?>">
                                         <div class="mb-3">

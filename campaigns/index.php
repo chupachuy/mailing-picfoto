@@ -6,7 +6,16 @@ require_once '../includes/functions.php';
 requireRole(['admin', 'editor']);
 
 $db = getDB();
-$stmt = $db->query("SELECT c.*, u.username as editor_name FROM campaigns c LEFT JOIN users u ON c.id_editor = u.id ORDER BY c.created_at DESC");
+
+$page = max(1, (int)($_GET['page'] ?? 1));
+$perPage = 20;
+$offset = ($page - 1) * $perPage;
+
+$total = $db->query("SELECT COUNT(*) FROM campaigns")->fetchColumn();
+$totalPages = max(1, ceil($total / $perPage));
+
+$stmt = $db->prepare("SELECT c.*, u.username as editor_name FROM campaigns c LEFT JOIN users u ON c.id_editor = u.id ORDER BY c.created_at DESC LIMIT ? OFFSET ?");
+$stmt->execute([$perPage, $offset]);
 $campaigns = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -56,7 +65,9 @@ $campaigns = $stmt->fetchAll();
                             <tbody>
                                 <?php foreach ($campaigns as $c): ?>
                                     <tr>
-                                        <td><?= htmlspecialchars($c['name']) ?></td>
+                                        <td>
+                                            <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:<?= htmlspecialchars($c['accent_color'] ?? '#007bff') ?>;margin-right:6px;"></span>
+                                            <?= htmlspecialchars($c['name']) ?></td>
                                         <td><?= htmlspecialchars($c['subject']) ?></td>
                                         <td><?= htmlspecialchars($c['editor_name']) ?></td>
                                         <td>
@@ -98,6 +109,17 @@ $campaigns = $stmt->fetchAll();
                             </tbody>
                         </table>
                     </div>
+                    <?php if ($totalPages > 1): ?>
+                    <nav>
+                        <ul class="pagination justify-content-center mb-0">
+                            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                                <li class="page-item <?= $i === $page ? 'active' : '' ?>">
+                                    <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
+                                </li>
+                            <?php endfor; ?>
+                        </ul>
+                    </nav>
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
         </div>

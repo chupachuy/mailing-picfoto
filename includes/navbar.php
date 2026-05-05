@@ -1,10 +1,3 @@
-<?php
-if (isset($_GET['logout'])) {
-    session_destroy();
-    header('Location: login.php');
-    exit;
-}
-?>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="<?= BASE_URL ?>/dashboard.php">
@@ -27,6 +20,7 @@ if (isset($_GET['logout'])) {
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="<?= BASE_URL ?>/admin/smtp.php">SMTP</a></li>
+                            <li><a class="dropdown-item" href="<?= BASE_URL ?>/admin/social.php">Redes Sociales</a></li>
                             <li><a class="dropdown-item" href="<?= BASE_URL ?>/admin/users.php">Usuarios</a></li>
                         </ul>
                     </li>
@@ -53,7 +47,7 @@ if (isset($_GET['logout'])) {
                         <li>
                             <hr class="dropdown-divider">
                         </li>
-                        <li><a class="dropdown-item" href="<?= BASE_URL ?>/login.php?logout=1">Cerrar Sesión</a></li>
+                        <li><a class="dropdown-item" href="<?= BASE_URL ?>/logout.php">Cerrar Sesión</a></li>
                     </ul>
                 </li>
             </ul>

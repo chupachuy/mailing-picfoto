@@ -19,16 +19,26 @@ CREATE TABLE users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
+-- Tabla de Grupos de Suscriptores
+CREATE TABLE subscriber_groups (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    color VARCHAR(7) DEFAULT '#6c757d',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 -- Tabla de Suscriptores
 CREATE TABLE subscribers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
     name VARCHAR(100),
+    group_id INT NULL,
     status ENUM('active', 'unsubscribed') NOT NULL DEFAULT 'active',
     token_unsubscribe VARCHAR(64) NOT NULL UNIQUE,
     subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     unsubscribed_at TIMESTAMP NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (group_id) REFERENCES subscriber_groups(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- Tabla de Campañas
@@ -41,6 +51,18 @@ CREATE TABLE campaigns (
     promotional_text TEXT,
     link_url VARCHAR(500),
     link_text VARCHAR(100),
+    accent_color VARCHAR(7) DEFAULT '#007bff',
+    subtitle VARCHAR(300),
+    logo_url VARCHAR(500),
+    section2_title VARCHAR(200),
+    section2_text TEXT,
+    secondary_link_url VARCHAR(500),
+    secondary_link_text VARCHAR(100),
+    secondary_image_url VARCHAR(500),
+    bg_color VARCHAR(7) DEFAULT '#f4f4f4',
+    footer_text TEXT,
+    social_enabled BOOLEAN DEFAULT TRUE,
+    target_groups TEXT NULL,
     html_body LONGTEXT,
     id_editor INT NOT NULL,
     status ENUM('draft', 'queued', 'sending', 'completed', 'cancelled') NOT NULL DEFAULT 'draft',
@@ -68,6 +90,24 @@ CREATE TABLE email_queue (
     FOREIGN KEY (id_subscriber) REFERENCES subscribers(id) ON DELETE CASCADE,
     UNIQUE KEY unique_queue (id_campaign, id_subscriber)
 ) ENGINE=InnoDB;
+
+-- Tabla de Configuración de Redes Sociales
+CREATE TABLE social_config (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    social_name VARCHAR(50) NOT NULL,
+    social_url VARCHAR(500) NOT NULL DEFAULT '',
+    social_icon VARCHAR(10) DEFAULT '',
+    social_color VARCHAR(7) DEFAULT '#000000',
+    sort_order INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE
+) ENGINE=InnoDB;
+
+-- Insertar redes sociales por defecto
+INSERT INTO social_config (social_name, social_url, social_icon, social_color, sort_order) VALUES
+('Facebook', '', 'f', '#1877F2', 1),
+('TikTok', '', '♫', '#000000', 2),
+('Instagram', '', '★', '#E4405F', 3),
+('YouTube', '', '▶', '#FF0000', 4);
 
 -- Tabla de Configuración SMTP
 CREATE TABLE smtp_config (

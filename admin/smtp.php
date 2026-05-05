@@ -8,6 +8,8 @@ requireRole(['admin']);
 $db = getDB();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!verifyCsrf()) { redirect('smtp.php'); }
+
     $smtp_host = trim($_POST['smtp_host'] ?? '');
     $smtp_port = (int)($_POST['smtp_port'] ?? 587);
     $smtp_username = trim($_POST['smtp_username'] ?? '');
@@ -15,12 +17,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $smtp_encryption = $_POST['smtp_encryption'] ?? 'tls';
     $from_email = trim($_POST['from_email'] ?? '');
     $from_name = trim($_POST['from_name'] ?? '');
+
+    $stmt = $db->prepare("SELECT smtp_password FROM smtp_config WHERE id = 1");
+    $stmt->execute();
+    $existing = $stmt->fetch();
+    $password_value = !empty($smtp_password) ? encryptSmtpPassword($smtp_password) : $existing['smtp_password'];
     
     $stmt = $db->prepare("UPDATE smtp_config SET 
         smtp_host = ?, smtp_port = ?, smtp_username = ?, smtp_password = ?, 
         smtp_encryption = ?, from_email = ?, from_name = ?
         WHERE id = 1");
-    $stmt->execute([$smtp_host, $smtp_port, $smtp_username, $smtp_password, $smtp_encryption, $from_email, $from_name]);
+    $stmt->execute([$smtp_host, $smtp_port, $smtp_username, $password_value, $smtp_encryption, $from_email, $from_name]);
     
     setFlash('success', 'Configuración SMTP guardada');
     redirect('smtp.php');
@@ -56,6 +63,7 @@ $config = $stmt->fetch();
                         <?php endif; ?>
 
                         <form method="POST">
+                            <?= csrfField() ?>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Servidor SMTP</label>
@@ -87,7 +95,7 @@ $config = $stmt->fetch();
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Contraseña SMTP</label>
                                     <input type="password" name="smtp_password" class="form-control" 
-                                           value="<?= htmlspecialchars($config['smtp_password']) ?>">
+                                           value="">
                                     <small class="text-muted">Dejar en blanco para no cambiar</small>
                                 </div>
                             </div>
